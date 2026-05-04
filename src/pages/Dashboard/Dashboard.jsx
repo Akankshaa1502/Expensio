@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useFinance } from '../../context/FinanceContext';
+import { useAuth } from '../../context/AuthContext';
 import { useBudget } from '../../hooks/useBudget';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { parseISO, format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
@@ -11,7 +12,17 @@ import TransactionCard from '../../components/TransactionCard/TransactionCard';
 
 export default function Dashboard() {
   const { transactions } = useFinance();
+  const { user } = useAuth();
   const { budget, totalSpent, remaining, percentUsed, status } = useBudget();
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }, []);
+
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'there';
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -52,26 +63,37 @@ export default function Dashboard() {
     return [...transactions].sort((a, b) => parseISO(b.date) - parseISO(a.date)).slice(0, 5);
   }, [transactions]);
 
-  const cardVariants = {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+  };
+
+  const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: (i) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.3 } }),
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
   };
 
   return (
-    <div>
-      <div className="page-header">
-        <h2>Dashboard</h2>
-        <p>Welcome back! Here's your financial overview for {format(new Date(), 'MMMM yyyy')}.</p>
-      </div>
+    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div className="page-header" variants={itemVariants}>
+        <h2>{greeting}, <span className="greeting-name">{displayName}</span> 👋</h2>
+        <p>Here's your financial overview for {format(new Date(), 'MMMM yyyy')}.</p>
+      </motion.div>
 
-      <div className="stats-grid">
+      <motion.div className="stats-grid" variants={itemVariants}>
         {[
           { label: 'Total Income', value: formatCurrency(stats.totalIncome), icon: <HiOutlineTrendingUp />, color: 'green' },
           { label: 'Total Expenses', value: formatCurrency(stats.totalExpenses), icon: <HiOutlineTrendingDown />, color: 'red' },
           { label: 'Net Balance', value: formatCurrency(stats.netBalance), icon: <HiOutlineCash />, color: 'blue' },
           { label: 'Top Category', value: stats.topCategory ? stats.topCategory[0] : '—', icon: <HiOutlineStar />, color: 'brown' },
         ].map((stat, i) => (
-          <motion.div key={stat.label} className="card stat-card" custom={i} initial="hidden" animate="visible" variants={cardVariants}>
+          <motion.div
+            key={stat.label}
+            className="card stat-card"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: i * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          >
             <div className={`stat-icon ${stat.color}`}>{stat.icon}</div>
             <div className="stat-info">
               <h4>{stat.label}</h4>
@@ -79,21 +101,24 @@ export default function Dashboard() {
             </div>
           </motion.div>
         ))}
-      </div>
+      </motion.div>
 
-      <div className="charts-grid">
+      <motion.div className="charts-grid" variants={itemVariants}>
         <BudgetCard budget={budget} totalSpent={totalSpent} remaining={remaining} percentUsed={percentUsed} status={status} />
         <SpendingByCategory data={categoryData} />
-      </div>
+      </motion.div>
 
-      <div style={{ marginTop: 28 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 14 }}>Recent Transactions</h3>
+      <motion.div style={{ marginTop: 28 }} variants={itemVariants}>
+        <div className="section-title">
+          Recent Transactions
+          <span className="section-count">{recentTransactions.length}</span>
+        </div>
         <div className="transaction-list">
           {recentTransactions.map((t, i) => (
             <TransactionCard key={t.id} transaction={t} index={i} onEdit={() => {}} onDelete={() => {}} />
           ))}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

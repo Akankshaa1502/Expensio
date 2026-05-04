@@ -1,13 +1,19 @@
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { motion } from 'framer-motion';
+import { HiOutlineCurrencyDollar } from 'react-icons/hi';
 
 export default function BudgetCard({ budget, totalSpent, remaining, percentUsed, status }) {
   const barClass = status === 'danger' ? 'danger' : status === 'warning' ? 'warning' : '';
 
   return (
     <div className="card">
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Monthly Budget</h3>
-      <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--green-dark)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+        <div className="stat-icon green" style={{ width: 36, height: 36, fontSize: 18 }}>
+          <HiOutlineCurrencyDollar />
+        </div>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--green-dark)' }}>Monthly Budget</h3>
+      </div>
+      <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--green-dark)', letterSpacing: '-1px' }}>
         {formatCurrency(budget.monthlyBudget)}
       </div>
       <div className="budget-progress" style={{ marginTop: 20 }}>
@@ -15,8 +21,8 @@ export default function BudgetCard({ budget, totalSpent, remaining, percentUsed,
           <motion.div
             className={`progress-bar-fill ${barClass}`}
             initial={{ width: 0 }}
-            animate={{ width: `${percentUsed}%` }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
+            animate={{ width: `${Math.min(percentUsed, 100)}%` }}
+            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
           />
         </div>
         <div className="budget-stats">
