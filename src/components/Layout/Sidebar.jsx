@@ -1,5 +1,6 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import { HiOutlineHome, HiOutlineCreditCard, HiOutlinePlusCircle, HiOutlineCurrencyDollar, HiOutlineChartBar } from 'react-icons/hi';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { HiOutlineHome, HiOutlineCreditCard, HiOutlinePlusCircle, HiOutlineCurrencyDollar, HiOutlineChartBar, HiOutlineLogout } from 'react-icons/hi';
+import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: <HiOutlineHome /> },
@@ -10,7 +11,33 @@ const navItems = [
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
-  const location = useLocation();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
+  };
+
+  const getInitials = () => {
+    if (user?.displayName) {
+      return user.displayName
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    return user?.email?.[0]?.toUpperCase() || 'U';
+  };
+
+  const getDisplayName = () => {
+    return user?.displayName || user?.email?.split('@')[0] || 'User';
+  };
 
   return (
     <>
@@ -34,6 +61,24 @@ export default function Sidebar({ isOpen, onClose }) {
             </NavLink>
           ))}
         </nav>
+
+        {/* User profile & logout */}
+        <div className="sidebar-user">
+          <div className="sidebar-user-info">
+            {user?.photoURL ? (
+              <img src={user.photoURL} alt="" className="sidebar-avatar-img" referrerPolicy="no-referrer" />
+            ) : (
+              <div className="sidebar-avatar">{getInitials()}</div>
+            )}
+            <div className="sidebar-user-details">
+              <span className="sidebar-user-name">{getDisplayName()}</span>
+              <span className="sidebar-user-email">{user?.email}</span>
+            </div>
+          </div>
+          <button className="sidebar-logout" onClick={handleLogout} title="Sign out">
+            <HiOutlineLogout />
+          </button>
+        </div>
       </aside>
     </>
   );
